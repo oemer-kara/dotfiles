@@ -1,9 +1,17 @@
 #!/bin/bash
+#chmod +x install.sh
 set -e
 
-# Symlink .vimrc
-ln -sf ~/dotfiles/.vimrc ~/.vimrc
+# Absolute path to the repo
+DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Ensure autoload path exists and copy vendored plug.vim
+# Ensure autoload exists
 mkdir -p ~/.vim/autoload
-cp ~/dotfiles/vim/autoload/plug.vim ~/.vim/autoload/plug.vim
+
+# Copy vendored plug.vim
+cp "$DOTFILES_DIR/vim/autoload/plug.vim" ~/.vim/autoload/plug.vim
+
+# Symlink .vimrc
+ln -sf "$DOTFILES_DIR/.vimrc" ~/.vimrc
+
+echo "Vim setup complete. Plugins are already included in the repo."
