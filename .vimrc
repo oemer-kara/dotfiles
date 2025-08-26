@@ -180,3 +180,54 @@ augroup UserAutoCmds
   " Reload files changed outside
   autocmd FocusGained,BufEnter * checktime
 augroup END
+
+" -----------------------------
+" Ctags: config and keybindings
+" -----------------------------
+if executable('ctags')
+  " Search for tags in current dir, then upward
+  set tags=./tags;,tags
+  command! -nargs=* CtagsGenerate silent! !ctags -R --fields=+l .
+endif
+
+" Rename symbol under cursor in current buffer (approximate :LSP rename)
+function! RenameSymbol()
+  let l:word = expand('<cword>')
+  let l:new = input('Rename "' . l:word . '" to: ')
+  if empty(l:new) || l:new ==# l:word
+    return
+  endif
+  execute '%s/\V\<' . escape(l:word, '/\\') . '\>/' . escape(l:new, '/\\') . '/g'
+endfunction
+
+" Find references: ripgrep if available, else fallback to vimgrep
+function! FindReferences()
+  let l:word = expand('<cword>')
+  if empty(l:word)
+    return
+  endif
+  if executable('rg')
+    " --vimgrep for quickfix format
+    execute 'silent grep! -R --vimgrep --no-heading -- ' . shellescape(l:word)
+  else
+    " Best-effort recursive search
+    execute 'silent vimgrep /' . escape(l:word, '/\\') . '/gj **/*'
+  endif
+  copen
+endfunction
+
+" Preview signature/info: show tag in preview window if available
+function! PreviewTag()
+  execute 'ptag ' . expand('<cword>')
+endfunction
+
+" LSP-like normal-mode mappings using ctags/quickfix
+nnoremap <silent> gd <C-]>
+nnoremap <silent> gD :tselect <C-R>=expand('<cword>')<CR><CR>
+nnoremap <silent> K K
+nnoremap <silent> gi :tjump <C-R>=expand('<cword>')<CR><CR>
+" Keep existing <C-k> window navigation; provide alternative preview on <leader>k
+nnoremap <silent> <leader>k :call PreviewTag()<CR>
+nnoremap <silent> <leader>rn :call RenameSymbol()<CR>
+nnoremap <silent> gr :call FindReferences()<CR>
+nnoremap <silent> <leader>ct :CtagsGenerate<CR>
