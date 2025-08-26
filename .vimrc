@@ -18,7 +18,6 @@ set ignorecase
 set smartcase
 set incsearch
 set hlsearch
-set termguicolors
 
 " Airline (loaded via native pack)
 let g:airline#extensions#tabline#enabled = 1
