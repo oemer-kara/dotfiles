@@ -187,7 +187,13 @@ augroup END
 if executable('ctags')
   " Search for tags in current dir, then upward
   set tags=./tags;,tags
-  command! -nargs=* CtagsGenerate silent! !ctags -R --fields=+l .
+  " Prefer universal-ctags style options for richer C/C++ tags
+  command! -nargs=* CtagsGenerate silent! !ctags -R \\
+        \ --languages=C,C++ \\
+        \ --c++-kinds=+p \\
+        \ --fields=+iaSl \\
+        \ --extras=+q \\
+        \ .
 endif
 
 " Rename symbol under cursor in current buffer (approximate :LSP rename)
@@ -229,5 +235,28 @@ nnoremap <silent> gi :tjump <C-R>=expand('<cword>')<CR><CR>
 " Keep existing <C-k> window navigation; provide alternative preview on <leader>k
 nnoremap <silent> <leader>k :call PreviewTag()<CR>
 nnoremap <silent> <leader>rn :call RenameSymbol()<CR>
-nnoremap <silent> gr :call FindReferences()<CR>
 nnoremap <silent> <leader>ct :CtagsGenerate<CR>
+
+" -----------------------------
+" Completion: Tab navigation and options
+" -----------------------------
+set completeopt=menuone,noinsert,noselect
+set shortmess+=c
+
+" Command-line completion improvements
+set wildmenu
+set wildmode=longest:full,full
+
+" Use Tab/Shift-Tab to navigate popup menu; Enter accepts selection
+inoremap <expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<C-h>"
+inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<CR>"
+
+" Trigger omni-completion manually (if available)
+inoremap <C-Space> <C-x><C-o>
+
+" Trigger tags-based completion (keywords from tags)
+inoremap <C-]> <C-x><C-]>
+
+" Use richer completion sources (buffer, windows, unloaded buffers, tags, includes)
+set complete=.,w,b,u,t,i
