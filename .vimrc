@@ -18,14 +18,32 @@ set ignorecase
 set smartcase
 set incsearch
 set hlsearch
+set relativenumber
 
-" Airline (loaded via native pack)
-let g:airline#extensions#tabline#enabled = 1
-let g:airline_powerline_fonts = 1
+" Buffer navigation
+nnoremap <silent> < :bprevious<CR>
+nnoremap <silent> > :bnext<CR>
+
+" Airline (loaded via native pack) — minimal, low-noise setup
+let g:airline#extensions#tabline#enabled = 0
+let g:airline_powerline_fonts = 0
+let g:airline_left_sep = ''
+let g:airline_right_sep = ''
+let g:airline#extensions#branch#enabled = 0
+let g:airline#extensions#hunks#enabled = 0
+let g:airline#extensions#wordcount#enabled = 0
+let g:airline#extensions#whitespace#enabled = 0
+let g:airline#extensions#tagbar#enabled = 0
+let g:airline_section_a = '%{airline#mode()}'
+let g:airline_section_b = ''
+let g:airline_section_c = '%t'
+let g:airline_section_x = ''
+let g:airline_section_y = ''
+let g:airline_section_z = '%l:%c %p%%'
 
 " NERDTree convenience mapping if plugin is present
 if exists(':NERDTreeToggle')
-  nnoremap <silent> <F2> :NERDTreeToggle<CR>
+  nnoremap <silent> <C-e> :NERDTreeToggle<CR>
 endif
 
 " If running inside Neovim, keep the config compatible
@@ -69,8 +87,4 @@ endfor
 
 " Generate help tags for loaded plugins
 silent! helptags ALL
-
-" -----------------------------
-" Additional Vim settings
-" -----------------------------
-set relativenumber
+ -----------------------------
