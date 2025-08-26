@@ -90,6 +90,22 @@ function Start-PreflightChecks {
     if (-not (Test-Path $VimDirSource)) { Write-LogError "vim directory not found: $VimDirSource"; exit 1 }
 }
 
+function Setup-FzfBinary {
+    $vimBinDir = Join-Path $DotfilesDir "vim\bin"
+    $fzfBinary = Join-Path $vimBinDir "fzf.exe"
+    
+    # Create vim/bin directory if it doesn't exist
+    New-DirectoryIfMissing $vimBinDir
+    
+    # Check if fzf binary exists
+    if (Test-Path $fzfBinary) {
+        Write-LogSuccess "fzf binary found: $fzfBinary"
+    }
+    else {
+        Write-LogWarning "fzf binary not found: $fzfBinary"
+    }
+}
+
 function Install-VimConfig {
     New-DirectoryIfMissing $VimConfigDir
 
@@ -137,6 +153,7 @@ function Show-InstallationSummary { Write-LogSuccess "Dotfiles installed." }
 function Start-Installation {
     try {
         Start-PreflightChecks
+        Setup-FzfBinary
         Install-VimConfig
         Test-PluginInstallation
         Complete-Installation

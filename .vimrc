@@ -182,6 +182,107 @@ augroup UserAutoCmds
 augroup END
 
 " -----------------------------
+" -----------------------------
+" FZF Configuration
+" -----------------------------
+" Set up fzf binary path using relative path from .vimrc location
+let s:repo_root = expand('<sfile>:p:h')
+" On Unix systems, .vimrc is in home directory, so look for vim/bin in .vim directory
+if has('win32') || has('win64')
+  let s:vim_bin_path = s:repo_root . '\vim\bin'
+else
+  " For Unix: if .vimrc is in home directory, look in .vim/bin, otherwise use relative path
+  if s:repo_root == expand('$HOME')
+    let s:vim_bin_path = s:repo_root . '/.vim/bin'
+  else
+    let s:vim_bin_path = s:repo_root . '/vim/bin'
+  endif
+endif
+
+" Add vim/bin to PATH
+if has('win32') || has('win64')
+  let $PATH = s:vim_bin_path . ';' . $PATH
+else
+  let $PATH = s:vim_bin_path . ':' . $PATH
+  " Ensure fzf binary is executable on Unix systems
+  let s:fzf_binary = s:vim_bin_path . '/fzf'
+  if filereadable(s:fzf_binary) && !executable(s:fzf_binary)
+    call system('chmod +x ' . shellescape(s:fzf_binary))
+  endif
+endif
+
+" Set fzf binary path for the plugin
+let g:fzf_command_prefix = ''
+let g:fzf_binary_path = s:vim_bin_path . '/fzf'
+
+" FZF plugin configuration
+let g:fzf_layout = { 'down': '~40%' }
+let g:fzf_preview_window = ['right:50%:hidden', 'ctrl-/']
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit',
+  \ 'ctrl-y': { lines -> setreg('*', join(lines, "\n")) },
+  \ 'alt-y': { lines -> setreg('+', join(lines, "\n")) }
+\ }
+
+" FZF keybindings
+" File finder
+nnoremap <silent> <leader>ff :Files<CR>
+" Buffer finder
+nnoremap <silent> <leader>fb :Buffers<CR>
+" Lines in current buffer
+nnoremap <silent> <leader>fl :BLines<CR>
+" Lines in all buffers
+nnoremap <silent> <leader>fL :Lines<CR>
+" Tags in current buffer
+nnoremap <silent> <leader>ft :BTags<CR>
+" Tags in all buffers
+nnoremap <silent> <leader>fT :Tags<CR>
+" Commands
+nnoremap <silent> <leader>fc :Commands<CR>
+" Command history
+nnoremap <silent> <leader>fh :History<CR>
+" Search history
+nnoremap <silent> <leader>fs :History/<CR>
+" Help tags
+nnoremap <silent> <leader>fH :Helptags<CR>
+" Git files (if in git repo)
+nnoremap <silent> <leader>fg :GFiles<CR>
+" Git commits
+nnoremap <silent> <leader>fG :Commits<CR>
+
+" FZF completion integration
+" Enable fzf completion for various commands
+let g:fzf_completion = {
+  \ 'file': 'fzf#vim#complete#path',
+  \ 'buffer': 'fzf#vim#complete#buffer',
+  \ 'line': 'fzf#vim#complete#line',
+  \ 'tag': 'fzf#vim#complete#tag',
+  \ 'help': 'fzf#vim#complete#help'
+\ }
+
+" Custom FZF commands
+" Find files with preview
+command! -bang -nargs=? -complete=dir Files
+  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
+
+" Find in files (ripgrep if available, else grep)
+if executable('rg')
+  command! -bang -nargs=* Rg
+    \ call fzf#vim#grep(
+    \   'rg --column --line-number --no-heading --color=always --smart-case -- '.shellescape(<q-args>), 1,
+    \   fzf#vim#with_preview(), <bang>0)
+  nnoremap <silent> <leader>fr :Rg<CR>
+else
+  command! -bang -nargs=* Rg
+    \ call fzf#vim#grep(
+    \   'grep -r --line-number --color=always -- '.shellescape(<q-args>), 1,
+    \   fzf#vim#with_preview(), <bang>0)
+  nnoremap <silent> <leader>fr :Rg<CR>
+endif
+
+" -----------------------------
 " Ctags: config and keybindings
 " -----------------------------
 if executable('ctags')
