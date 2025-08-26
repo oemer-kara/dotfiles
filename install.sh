@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail  
+set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$SCRIPT_DIR"
 
@@ -35,14 +35,14 @@ safe_copy() {
     local source="$1"
     local destination="$2"
     local backup_suffix=".dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
-    
+
     if [ -e "$destination" ]; then
         log_warning "Destination exists: $destination"
         log_info "Creating backup: ${destination}${backup_suffix}"
         mv "$destination" "${destination}${backup_suffix}"
         log_success "Backup created: ${destination}${backup_suffix}"
     fi
-    
+
     log_info "Copying: $source -> $destination"
     cp -r "$source" "$destination"
     log_success "Copy completed: $destination"

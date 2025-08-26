@@ -17,34 +17,106 @@ set smartindent
 set ignorecase
 set smartcase
 set incsearch
-set hlsearch
+set nohlsearch
+set cursorline
 set relativenumber
+
+" Leader key
+let mapleader = " "
+let maplocalleader = ","
+
+" Disable netrw (using NERDTree instead)
+let g:loaded_netrw = 1
+let g:loaded_netrwPlugin = 1
+
+" Additional settings mirrored from Lua
+set synmaxcol=200
+set noshowmode
+set mouse=a
+set clipboard=unnamedplus
+set scrolloff=10
+set sidescrolloff=8
+set gdefault
+set nofoldenable
+set foldlevel=99
+set splitright
+set splitbelow
+set equalalways
+set history=10000
+set undolevels=10000
 
 " Buffer navigation
 nnoremap <silent> < :bprevious<CR>
 nnoremap <silent> > :bnext<CR>
 
-" Airline (loaded via native pack) — minimal, low-noise setup
-let g:airline#extensions#tabline#enabled = 0
-let g:airline_powerline_fonts = 0
-let g:airline_left_sep = ''
-let g:airline_right_sep = ''
-let g:airline#extensions#branch#enabled = 0
-let g:airline#extensions#hunks#enabled = 0
-let g:airline#extensions#wordcount#enabled = 0
-let g:airline#extensions#whitespace#enabled = 0
-let g:airline#extensions#tagbar#enabled = 0
-let g:airline_section_a = '%{airline#mode()}'
-let g:airline_section_b = ''
-let g:airline_section_c = '%t'
-let g:airline_section_x = ''
-let g:airline_section_y = ''
-let g:airline_section_z = '%l:%c %p%%'
+" Keybindings mirrored from Lua config
+" Utility
+nnoremap <silent> vv V
+nnoremap <silent> <C-s> :w<CR>
+vnoremap <silent> b <C-v>
+inoremap <silent> <C-h> <C-w>
 
-" NERDTree convenience mapping if plugin is present
-if exists(':NERDTreeToggle')
-  nnoremap <silent> <C-e> :NERDTreeToggle<CR>
-endif
+" Window navigation
+nnoremap <silent> <C-h> <C-w>h
+nnoremap <silent> <C-j> <C-w>j
+nnoremap <silent> <C-k> <C-w>k
+nnoremap <silent> <C-l> <C-w>l
+
+" Window resizing
+nnoremap <silent> <C-Down> :resize -2<CR>
+nnoremap <silent> <C-Up> :resize +2<CR>
+nnoremap <silent> <C-Right> :vertical resize -2<CR>
+nnoremap <silent> <C-Left> :vertical resize +2<CR>
+nnoremap <silent> <C-+> :vertical resize =<CR>
+
+" Keep cursor centered when scrolling and searching
+nnoremap <silent> <C-d> <C-d>zz
+nnoremap <silent> <C-u> <C-u>zz
+nnoremap <silent> n nzzzv
+nnoremap <silent> N Nzzzv
+
+" Better indenting in visual mode (keep selection)
+vnoremap <silent> < <gv
+vnoremap <silent> > >gv
+
+" Splits
+nnoremap <silent> <leader>sh :split<CR>
+nnoremap <silent> <leader>sv :vsplit<CR>
+nnoremap <silent> <leader>sc :close<CR>
+
+" Buffers
+nnoremap <silent> <C-q> :bd<CR>
+
+" Yank/Delete entire buffer
+nnoremap <silent> <leader>ya ggVGy
+nnoremap <silent> <leader>da ggVGd
+
+" Visual selection search/replace
+function! VisualBlockSearchReplace() range
+  let l:search_term = input('Search for: ')
+  if empty(l:search_term)
+    return
+  endif
+  let l:replace_term = input('Replace with: ')
+  if empty(l:replace_term)
+    return
+  endif
+  execute "'<','>'s/" . escape(l:search_term, '/\\') . "/" . escape(l:replace_term, '/\\') . "/g"
+endfunction
+vnoremap <silent> <leader>sr :<C-u>call VisualBlockSearchReplace()<CR>
+
+" Airline (loaded via native pack)
+let g:airline#extensions#tabline#enabled = 1
+let g:airline_powerline_fonts = 1
+
+" NERDTree convenience mapping
+nnoremap <silent> <C-e> :silent! NERDTreeToggle<CR>
+
+" If NERDTree is the last window, close Vim
+augroup NERDTreeAutoClose
+  autocmd!
+  autocmd BufEnter * if winnr('$') == 1 && exists('t:NERDTreeBufName') && bufname() ==# t:NERDTreeBufName | quit | endif
+augroup END
 
 " If running inside Neovim, keep the config compatible
 if has('nvim')
@@ -87,4 +159,24 @@ endfor
 
 " Generate help tags for loaded plugins
 silent! helptags ALL
- -----------------------------
+
+augroup UserAutoCmds
+  autocmd!
+  " Restore last cursor position
+  autocmd BufReadPost * if line('"') > 1 && line('"') <= line('$') | execute 'normal! g`"' | endif
+  " Briefly highlight yanked text (best-effort; requires +lua or nvim)
+  if has('lua') || has('nvim')
+    autocmd TextYankPost * silent! lua vim.highlight.on_yank { higroup = 'IncSearch', timeout = 200 }
+  endif
+  " Equalize splits on Vim resize
+  autocmd VimResized * wincmd =
+  " Strip trailing whitespace on save
+  autocmd BufWritePre * %s/\s\+$//e
+  " Only show cursorline in active window
+  autocmd WinEnter,BufEnter * setlocal cursorline
+  autocmd WinLeave * setlocal nocursorline
+  " Disable auto-comment on newline
+  autocmd BufEnter * set formatoptions-=cro
+  " Reload files changed outside
+  autocmd FocusGained,BufEnter * checktime
+augroup END

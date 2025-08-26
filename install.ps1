@@ -19,7 +19,7 @@ $VimConfigDir = Join-Path $HomeDir "vimfiles"
 
 $null = $true
 
- 
+
 function Write-LogInfo { param([string]$Message) Write-Host "$Message" }
 function Write-LogSuccess { param([string]$Message) Write-Host "$Message" }
 function Write-LogWarning { param([string]$Message) Write-Host "$Message" }
