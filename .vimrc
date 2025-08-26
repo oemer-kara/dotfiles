@@ -44,20 +44,29 @@ let s:repo_root = expand('<sfile>:p:h')
 execute 'set runtimepath^=' . s:repo_root . '/vim'
 execute 'set runtimepath+=' . s:repo_root . '/vim/after'
 
-" Load all plugins from vim/plugged/ directory
-let s:plugged_dir = s:repo_root . '/vim/plugged'
-if isdirectory(s:plugged_dir)
-  for s:plugin_dir in split(glob(s:plugged_dir . '/*', 1), '\n')
-    if isdirectory(s:plugin_dir)
-      execute 'set runtimepath+=' . s:plugin_dir
-      " Also add after directories if they exist
-      let s:after_dir = s:plugin_dir . '/after'
-      if isdirectory(s:after_dir)
-        execute 'set runtimepath+=' . s:after_dir
+" Load plugins from multiple offline locations
+" 1) Repo vendor dir:   <repo>/vim/plugged
+" 2) Unix home dir:     ~/.vim/plugged
+" 3) Windows home dir:  ~/vimfiles/plugged
+let s:plug_roots = [
+\  s:repo_root . '/vim/plugged',
+\  expand('~/.vim/plugged'),
+\  expand('~/vimfiles/plugged')
+\]
+
+for s:root in s:plug_roots
+  if isdirectory(s:root)
+    for s:plugin_dir in split(glob(s:root . '/*', 1), '\n')
+      if isdirectory(s:plugin_dir)
+        execute 'set runtimepath+=' . s:plugin_dir
+        let s:after_dir = s:plugin_dir . '/after'
+        if isdirectory(s:after_dir)
+          execute 'set runtimepath+=' . s:after_dir
+        endif
       endif
-    endif
-  endfor
-endif
+    endfor
+  endif
+endfor
 
 " Generate help tags for loaded plugins
 silent! helptags ALL
