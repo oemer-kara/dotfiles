@@ -22,10 +22,10 @@ HOST_VIM_DIR="$HOME_DIR/.vim"
 WINDOWS_COMPAT="false"
 
 # Logging functions
-log_info() { printf "%s\n" "$1"; }
-log_success() { printf "%s\n" "$1"; }
-log_warning() { printf "%s\n" "$1"; }
-log_error() { printf "%s\n" "$1" >&2; }
+log_info() { printf "\033[34m[INFO]\033[0m %s\n" "$1"; }
+log_success() { printf "\033[32m[SUCCESS]\033[0m %s\n" "$1"; }
+log_warning() { printf "\033[33m[WARNING]\033[0m %s\n" "$1"; }
+log_error() { printf "\033[31m[ERROR]\033[0m %s\n" "$1" >&2; }
 
 # Check if command exists - POSIX compliant
 command_exists() {
@@ -34,7 +34,7 @@ command_exists() {
 
 # Get current timestamp - works on all Unix systems
 get_timestamp() {
-    date +%s 2>/dev/null || date +%Y%m%d%H%M%S
+    date +%Y%m%d_%H%M%S 2>/dev/null || date +%s
 }
 
 # Detect OS type in a portable way
@@ -77,6 +77,8 @@ check_if_vim_exist_before_runs() {
         HOST_VIM_DIR="$HOME_DIR/.vim"
         WINDOWS_COMPAT="false"
     fi
+
+    log_info "Target vim directory: $HOST_VIM_DIR"
 }
 
 setup_binaries() {
@@ -89,68 +91,29 @@ setup_binaries() {
         return 0
     fi
 
+    log_info "Setting up binaries from: $vim_bin_dir"
+
     # Create bin directory if it doesn't exist
     if ! mkdir -p "$home_bin_dir" 2>/dev/null; then
         log_error "Failed to create bin directory: $home_bin_dir"
         return 1
     fi
 
-    if [ ! -d "$home_bin_dir" ]; then
-        log_info "Created bin directory: $home_bin_dir"
-    fi
-
-    # Find all executable files (no extension for Unix)
-    executable_files=""
-    if [ -d "$vim_bin_dir" ]; then
-        # Find all regular files in bin directory
-        for file in "$vim_bin_dir"/*; do
-            # Skip if no files match the pattern
-            [ ! -e "$file" ] && continue
-
-            # Skip directories
-            [ -d "$file" ] && continue
-
-            # Get just the filename
-            filename="$(basename "$file")"
-
-            # Skip files with extensions (like .exe, .txt, etc.)
-            case "$filename" in
-                *.*) continue ;;
-                *)
-                    # Check if it's a regular file and potentially executable
-                    if [ -f "$file" ]; then
-                        if [ -z "$executable_files" ]; then
-                            executable_files="$file"
-                        else
-                            executable_files="$executable_files $file"
-                        fi
-                    fi
-                    ;;
-            esac
-        done
-    fi
-
-    if [ -z "$executable_files" ]; then
-        log_info "No executable files found in: $vim_bin_dir"
-        return 0
-    fi
-
     success_count=0
     failure_count=0
 
-    # Process each executable file
-    for src_file in $executable_files; do
+    # Process all files in bin directory
+    for src_file in "$vim_bin_dir"/*; do
+        # Skip if no files match the pattern
+        [ ! -e "$src_file" ] && continue
+        
+        # Skip directories
+        [ -d "$src_file" ] && continue
+
         filename="$(basename "$src_file")"
         dest="$home_bin_dir/$filename"
 
-        # Make source file executable if it isn't already
-        if [ ! -x "$src_file" ]; then
-            if chmod +x "$src_file" 2>/dev/null; then
-                log_info "Made $filename executable"
-            else
-                log_warning "Could not make $filename executable, trying anyway"
-            fi
-        fi
+        log_info "Processing binary: $filename"
 
         # Remove existing file/symlink if it exists
         if [ -e "$dest" ] || [ -L "$dest" ]; then
@@ -161,137 +124,234 @@ setup_binaries() {
             fi
         fi
 
-        # Check write permissions in destination directory
-        if ! touch "$dest.test" 2>/dev/null; then
-            log_warning "No write permission for: $dest"
-            failure_count=$((failure_count + 1))
-            continue
-        fi
-        rm -f "$dest.test" 2>/dev/null
-
-        # Try to create symlink first, fallback to copy
-        link_success=false
-        if ln -sf "$src_file" "$dest" 2>/dev/null; then
-            if [ -L "$dest" ] && [ -e "$dest" ]; then
-                log_success "$filename symlinked to: $dest"
-                success_count=$((success_count + 1))
-                link_success=true
-            fi
-        fi
-
-        # If symlink failed, try copying
-        if [ "$link_success" = false ]; then
-            if cp "$src_file" "$dest" 2>/dev/null; then
-                # Make the copied file executable
-                chmod +x "$dest" 2>/dev/null || true
-
-                # Verify the copy was successful
+        # Copy the file
+        if cp "$src_file" "$dest" 2>/dev/null; then
+            # Make the copied file executable
+            if chmod +x "$dest" 2>/dev/null; then
+                # Verify the copy was successful and is executable
                 if [ -f "$dest" ] && [ -x "$dest" ]; then
-                    log_success "$filename copied to: $dest"
+                    log_success "Binary installed: $dest"
                     success_count=$((success_count + 1))
                 else
-                    log_warning "$filename copy may have failed"
+                    log_warning "Binary copy verification failed: $filename"
                     failure_count=$((failure_count + 1))
                 fi
             else
-                log_warning "Failed to copy $filename"
+                log_warning "Failed to make $filename executable"
                 failure_count=$((failure_count + 1))
             fi
+        else
+            log_warning "Failed to copy $filename"
+            failure_count=$((failure_count + 1))
         fi
     done
 
     # Summary logging
     if [ "$success_count" -gt 0 ]; then
-        log_info "Successfully processed $success_count executable(s) to bin directory"
+        log_success "Successfully installed $success_count binary(s) to $home_bin_dir"
+        log_info "Make sure $home_bin_dir is in your PATH"
+        
+        # Check if ~/bin is in PATH
+        case ":$PATH:" in
+            *":$home_bin_dir:"*) 
+                log_success "$home_bin_dir is already in PATH" 
+                ;;
+            *) 
+                log_warning "$home_bin_dir is NOT in PATH"
+                log_info "Add this to your ~/.bashrc or ~/.profile:"
+                log_info "export PATH=\"\$HOME/bin:\$PATH\""
+                ;;
+        esac
     fi
     if [ "$failure_count" -gt 0 ]; then
-        log_warning "$failure_count executable(s) failed to process"
+        log_warning "$failure_count binary(s) failed to install"
     fi
 
     return 0
 }
 
-copy_directory_contents_flat() {
+# Improved directory copying that preserves structure
+copy_directory_recursive() {
     source_path="$1"
     destination_path="$2"
 
     if [ ! -d "$source_path" ]; then
-        return 0
+        log_warning "Source directory not found: $source_path"
+        return 1
     fi
+
+    log_info "Copying $source_path to $destination_path"
 
     # Create destination directory if it doesn't exist
-    mkdir -p "$destination_path"
-
-    # Use find to copy contents while maintaining flat structure
-    (
-        cd "$source_path" || return 1
-        find . -type f -exec sh -c '
-            dest_dir="'"$destination_path"'"
-            src_file="$1"
-            # Remove leading ./
-            clean_path="${src_file#./}"
-            target="$dest_dir/$clean_path"
-            target_dir="$(dirname "$target")"
-
-            # Create target directory if needed
-            mkdir -p "$target_dir"
-
-            # Copy the file
-            cp "$src_file" "$target"
-        ' _ {} \;
-    )
-}
-
-install_vim_config() {
-    host_plugins="$HOST_VIM_DIR/plugged"
-
-    # Create vim directory if it doesn't exist
-    mkdir -p "$HOST_VIM_DIR"
-
-    if [ ! -d "$HOST_VIM_DIR" ]; then
-        log_info "Created vim directory: $HOST_VIM_DIR"
+    if ! mkdir -p "$destination_path"; then
+        log_error "Failed to create destination directory: $destination_path"
+        return 1
     fi
 
-    # Backup existing plugins
-    if [ -d "$host_plugins" ]; then
-        backup="${host_plugins}.backup-$(get_timestamp)"
-        if mv "$host_plugins" "$backup" 2>/dev/null; then
-            log_info "Backed up plugins to: $backup"
+    # Use cp -r for recursive copy, or find + cp for more control
+    if command_exists rsync; then
+        # Use rsync if available (preserves permissions and is more reliable)
+        if rsync -av --exclude='.git*' "$source_path/" "$destination_path/"; then
+            log_success "Directory copied using rsync"
+            return 0
         fi
     fi
 
-    # Sync vim config directory with flat structure
-    if [ -d "$DOTFILE_VIM_DIR_SOURCE" ]; then
-        copy_directory_contents_flat "$DOTFILE_VIM_DIR_SOURCE" "$HOST_VIM_DIR"
+    # Fallback to cp -r
+    if cp -r "$source_path"/* "$destination_path/" 2>/dev/null; then
+        log_success "Directory copied using cp"
+        return 0
+    fi
+
+    # Final fallback using find
+    (
+        cd "$source_path" || return 1
+        find . -type f | while read -r file; do
+            target_dir="$destination_path/$(dirname "$file")"
+            mkdir -p "$target_dir"
+            cp "$file" "$target_dir/"
+        done
+    )
+    
+    return 0
+}
+
+install_vim_config() {
+    log_info "Installing Vim configuration..."
+    
+    # Create vim directory if it doesn't exist
+    if ! mkdir -p "$HOST_VIM_DIR"; then
+        log_error "Failed to create vim directory: $HOST_VIM_DIR"
+        return 1
     fi
 
     # Backup existing .vimrc
     if [ -f "$HOME_DIR/.vimrc" ]; then
         backup="$HOME_DIR/.vimrc.backup-$(get_timestamp)"
         if mv "$HOME_DIR/.vimrc" "$backup" 2>/dev/null; then
-            log_info "Backed up .vimrc to: $backup"
+            log_info "Backed up existing .vimrc to: $backup"
         fi
     fi
 
     # Install new .vimrc
     if cp "$DOTFILE_VIMRC_SOURCE" "$HOME_DIR/.vimrc" 2>/dev/null; then
-        log_success "Vim configuration installed"
+        log_success "Installed .vimrc"
     else
         log_error "Failed to install .vimrc"
         return 1
     fi
 
+    # Install vim directory contents
+    for subdir in autoload plugin; do
+        src_dir="$DOTFILE_VIM_DIR_SOURCE/$subdir"
+        dest_dir="$HOST_VIM_DIR/$subdir"
+        
+        if [ -d "$src_dir" ]; then
+            log_info "Installing $subdir..."
+            
+            # Backup existing directory
+            if [ -d "$dest_dir" ]; then
+                backup="${dest_dir}.backup-$(get_timestamp)"
+                if mv "$dest_dir" "$backup" 2>/dev/null; then
+                    log_info "Backed up existing $subdir to: $backup"
+                fi
+            fi
+            
+            # Copy the directory
+            if copy_directory_recursive "$src_dir" "$dest_dir"; then
+                log_success "Installed $subdir"
+            else
+                log_error "Failed to install $subdir"
+                return 1
+            fi
+        else
+            log_warning "$subdir directory not found in source"
+        fi
+    done
+
+    # Special handling for fzf if it exists
+    fzf_src="$DOTFILE_VIM_DIR_SOURCE/plugin/fzf"
+    if [ -d "$fzf_src" ]; then
+        log_info "Setting up fzf integration..."
+        
+        # Create pack directory for native package loading (Vim 8+)
+        pack_dir="$HOST_VIM_DIR/pack/plugins/start"
+        if mkdir -p "$pack_dir"; then
+            # Copy fzf and fzf.vim as separate packages
+            for fzf_plugin in fzf fzf.vim; do
+                fzf_plugin_src="$DOTFILE_VIM_DIR_SOURCE/plugin/$fzf_plugin"
+                if [ -d "$fzf_plugin_src" ]; then
+                    fzf_plugin_dest="$pack_dir/$fzf_plugin"
+                    if copy_directory_recursive "$fzf_plugin_src" "$fzf_plugin_dest"; then
+                        log_success "Installed $fzf_plugin as native package"
+                    fi
+                fi
+            done
+        fi
+    fi
+
+    return 0
+}
+
+verify_installation() {
+    log_info "Verifying installation..."
+    
+    # Check if .vimrc exists and is readable
+    if [ -r "$HOME_DIR/.vimrc" ]; then
+        log_success ".vimrc is installed and readable"
+    else
+        log_error ".vimrc is missing or not readable"
+        return 1
+    fi
+    
+    # Check if essential binaries are accessible
+    for binary in fzf rg; do
+        if command_exists "$binary"; then
+            log_success "$binary is available in PATH"
+        else
+            log_warning "$binary is not found in PATH"
+        fi
+    done
+    
+    # Check vim directories
+    for dir in autoload plugin; do
+        if [ -d "$HOST_VIM_DIR/$dir" ]; then
+            file_count=$(find "$HOST_VIM_DIR/$dir" -type f | wc -l)
+            log_success "$dir directory exists with $file_count files"
+        else
+            log_warning "$dir directory is missing"
+        fi
+    done
+    
     return 0
 }
 
 main() {
+    log_info "Starting Vim dotfiles installation..."
+    
     check_if_vim_exist_before_runs
-    setup_binaries
-    install_vim_config
+    
+    if ! setup_binaries; then
+        log_error "Binary setup failed"
+        exit 1
+    fi
+    
+    if ! install_vim_config; then
+        log_error "Vim configuration installation failed"
+        exit 1
+    fi
+    
+    verify_installation
+    
+    log_success "Installation completed!"
+    log_info "You may need to:"
+    log_info "1. Add ~/bin to your PATH if not already done"
+    log_info "2. Restart your terminal or source your shell configuration"
+    log_info "3. Run :PlugInstall in Vim if using vim-plug"
 }
 
 # Handle interruption signals
-trap 'exit 1' INT TERM
+trap 'log_error "Installation interrupted"; exit 1' INT TERM
 
 main "$@"
 exit 0
