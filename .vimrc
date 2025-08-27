@@ -157,8 +157,8 @@ vnoremap <silent> <leader>sr :<C-u>call VisualBlockSearchReplace()<CR>
 " AIRLINE CONFIGS
 " ======================================================
 
-let g:airline#extensions#tabline#enabled = 1
 let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
 
 " ======================================================
 " NERDTree CONFIGS
@@ -185,3 +185,31 @@ let g:fzf_completion = {
   \ 'tag': 'fzf#vim#complete#tag',
   \ 'help': 'fzf#vim#complete#help'
 \ }
+
+" ======================================================
+" ALE CONFIGS
+" ======================================================
+
+nnoremap <silent> gd :ALEGoToDefinition<CR>
+nnoremap <silent> gD :ALEGoToDefinition<CR>
+nnoremap <silent> K :ALEHover<CR>
+nnoremap <silent> gi :ALEGoToImplementation<CR>
+nnoremap <silent> <leader>rn :ALERename<CR>
+nnoremap <silent> fr :ALEFindReferences<CR>
+let g:ale_completion_enabled = 1
+
+" Airline
+let g:airline#extensions#ale#enabled = 1
+
+let g:ale_fixers = {
+\   'c': ['clang-format'],
+\   'cpp': ['clang-format'],
+\}
+let g:ale_fix_on_save = 1
+
+" ======================================================
+" COMMENTARY CONFIGS
+" ======================================================
+:autocmd FileType c,cpp setlocal commentstring=//\ %s
+
+
