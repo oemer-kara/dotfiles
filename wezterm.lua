@@ -29,6 +29,12 @@ config.tab_bar_at_bottom = false
 
 -- Pane splitting keybinds (Leader = Ctrl+A, tmux-style)
 config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 1000 }
+
+local home = wezterm.home_dir
+local function goto_dir(cwd)
+  return wezterm.action.SpawnCommandInNewTab { cwd = cwd }
+end
+
 config.keys = {
   { key = '|', mods = 'LEADER|SHIFT', action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' } },
   { key = '-', mods = 'LEADER', action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' } },
@@ -37,6 +43,14 @@ config.keys = {
   { key = 'k', mods = 'LEADER', action = wezterm.action.ActivatePaneDirection 'Up' },
   { key = 'j', mods = 'LEADER', action = wezterm.action.ActivatePaneDirection 'Down' },
   { key = 'x', mods = 'LEADER', action = wezterm.action.CloseCurrentPane { confirm = true } },
+
+  -- Quick-jump: open a new tab straight into a common directory
+  { key = 'w', mods = 'LEADER', action = goto_dir 'C:\\ws' },
+  { key = 'd', mods = 'LEADER', action = goto_dir(home .. '\\Desktop') },
+  { key = 'o', mods = 'LEADER', action = goto_dir(home .. '\\Downloads') },
+  { key = 'c', mods = 'LEADER', action = goto_dir(home .. '\\Documents') },
+  { key = 'v', mods = 'LEADER', action = goto_dir 'C:\\ws\\src\\dotfiles\\nvim' },
+  { key = 'b', mods = 'LEADER', action = goto_dir(home .. '\\AppData\\Local\\nvim-data') },
 }
 
 return config
