@@ -1,1 +1,7 @@
+# nvim is its own git clone (own history), kept out of this repo's tracking
+nvim/
+
+# XDG_CONFIG_HOME points here, so every XDG-aware CLI (scoop, gh, ...) dumps
+# its own runtime state (not meaningful config) into a same-named folder
 scoop/
+gh/
