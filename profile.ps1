@@ -13,3 +13,11 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 
 Set-Alias -Name which -Value Get-Command
 Set-Alias -Name vim -Value nvim
+
+# Quick-jump directory shortcuts (mirrors the WezTerm Leader quick-jump keys)
+function ws { Set-Location 'C:\ws' }
+function desktop { Set-Location (Join-Path $HOME 'Desktop') }
+function downloads { Set-Location (Join-Path $HOME 'Downloads') }
+function documents { Set-Location (Join-Path $HOME 'Documents') }
+function nvimconfig { Set-Location 'C:\ws\src\dotfiles\nvim' }
+function nvimdata { Set-Location (Join-Path $env:LOCALAPPDATA 'nvim-data') }
