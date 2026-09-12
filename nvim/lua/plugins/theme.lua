@@ -1,39 +1,4 @@
 return {
-	-- Active theme (loads on startup)
-	{
-		"rebelot/kanagawa.nvim",
-		lazy = false,
-		priority = 1000,
-		config = function()
-			require("kanagawa").setup({
-				compile = false,
-				undercurl = true,
-				commentStyle = { italic = true },
-				functionStyle = { bold = true },
-				keywordStyle = { bold = true },
-				statementStyle = { bold = true },
-				typeStyle = {},
-				transparent = false,
-				dimInactive = false,
-				terminalColors = true,
-				colors = {
-					theme = {
-						all = {
-							ui = {
-								bg_gutter = "none",
-							},
-						},
-					},
-				},
-				background = {
-					dark = "wave",
-					light = "lotus",
-				},
-			})
-			vim.cmd.colorscheme("kanagawa")
-		end,
-	},
-
 	-- Theme collection
 	{ "slugbyte/lackluster.nvim", lazy = true },
 	{ "catppuccin/nvim", name = "catppuccin", lazy = true },

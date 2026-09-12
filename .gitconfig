@@ -9,8 +9,10 @@
 [init]
     defaultBranch = main
 [credential "https://github.com"]
-	helper = 
+	helper =
 	helper = !'C:\\ws\\scoop\\apps\\gh\\current\\bin\\gh.exe' auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !'C:\\ws\\scoop\\apps\\gh\\current\\bin\\gh.exe' auth git-credential
+[credential]
+	helper = manager
