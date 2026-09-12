@@ -27,8 +27,8 @@ config.use_fancy_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = false
 config.tab_bar_at_bottom = false
 
--- Pane splitting keybinds (Leader = Ctrl+A, tmux-style)
-config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 1000 }
+-- Pane splitting keybinds (Leader = Ctrl+Space, tmux-style)
+config.leader = { key = 'Space', mods = 'CTRL', timeout_milliseconds = 1000 }
 
 local home = wezterm.home_dir
 local function goto_dir(cwd)
