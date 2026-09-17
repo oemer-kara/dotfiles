@@ -16,7 +16,7 @@ return {
 	-----------------------------------
 	event = "VeryLazy",
 	keys = {
-		{ "<C-h>", "<cmd>Neotree toggle float<cr>", silent = true, desc = "Float File Explorer" },
+		{ "<C-m>", "<cmd>Neotree toggle float<cr>", silent = true, desc = "Float File Explorer" },
 	},
 
 

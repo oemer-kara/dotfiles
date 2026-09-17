@@ -15,10 +15,8 @@ return {
 		-- IMPORTS
 		----------------------------------------
 		local mason = require("mason")
-		local mason_lspconfig = require("mason-lspconfig")
 		local mason_tool_installer = require("mason-tool-installer")
 		local none_ls = require("null-ls")
-		local lspconfig = require("lspconfig")
 		local capabilities = require("cmp_nvim_lsp").default_capabilities()
 		local telescope = require("telescope.builtin")
 		local lspkind = require("lspkind")
@@ -106,50 +104,89 @@ return {
 			table.insert(clangd_cmd, "--offset-encoding=utf-8")
 		end
 
-		lspconfig.clangd.setup({
+		vim.lsp.config("clangd", {
 			cmd = clangd_cmd,
 			capabilities = capabilities,
 			offset_encoding = "utf-16",
-			root_dir = lspconfig.util.root_pattern(
+			root_markers = {
 				".clangd",
 				".clang-tidy",
 				".clang-format",
 				"compile_commands.json",
 				"compile_flags.txt",
 				"configure.ac",
-				".git"
-			),
+				".git",
+			},
 			on_attach = on_attach,
 		})
 
 		-- Python LSP configuration
-		lspconfig.pyright.setup({
+		vim.lsp.config("pyright", {
 			capabilities = capabilities,
 			on_attach = on_attach,
 		})
 
 		-- LaTeX LSP configuration
-		lspconfig.texlab.setup({
+		vim.lsp.config("texlab", {
 			capabilities = capabilities,
 			on_attach = on_attach,
 		})
 
 		-- CMake LSP configuration
-		lspconfig.neocmake.setup({
+		vim.lsp.config("neocmake", {
 			-- neocmakelsp >=0.10 uses the `stdio` subcommand, not `--stdio`
 			-- (lspconfig's default cmd is `--stdio`, which fails to start the server)
 			cmd = { "neocmakelsp", "stdio" },
 			capabilities = capabilities,
 			filetypes = { "cmake" },
-			root_dir = lspconfig.util.root_pattern("CMakeLists.txt", ".git"),
+			root_markers = { "CMakeLists.txt", ".git" },
 			init_options = {
 				format = { enable = true },
 				lint = { enable = true },
 				scan_cmake_in_package = true,
 			},
-			single_file_support = true,
 			on_attach = on_attach,
 		})
+
+		-- GitLab CI LSP configuration
+		-- gitlab_ci_ls only attaches to the "yaml.gitlab" filetype, so detect
+		-- GitLab CI yaml files and tag them accordingly.
+		vim.filetype.add({
+			filename = {
+				[".gitlab-ci.yml"] = "yaml.gitlab",
+				[".gitlab-ci.yaml"] = "yaml.gitlab",
+			},
+			pattern = {
+				[".*%.gitlab%-ci%.ya?ml"] = "yaml.gitlab",
+				[".*/%.gitlab/.*%.ya?ml"] = "yaml.gitlab",
+				[".*/%.gitlab%-ci/.*%.ya?ml"] = "yaml.gitlab",
+			},
+		})
+
+		vim.lsp.config("gitlab_ci_ls", {
+			capabilities = capabilities,
+			on_attach = on_attach,
+		})
+
+		-- YAML LSP configuration (schema validation, incl. GitLab CI)
+		vim.lsp.config("yamlls", {
+			capabilities = capabilities,
+			on_attach = on_attach,
+			settings = {
+				yaml = {
+					schemas = {
+						["https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json"] = {
+							".gitlab-ci.yml",
+							".gitlab-ci.yaml",
+							".gitlab/*.yml",
+							".gitlab-ci/*.yml",
+						},
+					},
+				},
+			},
+		})
+
+		vim.lsp.enable({ "clangd", "pyright", "texlab", "neocmake", "gitlab_ci_ls", "yamlls" })
 
 
 
@@ -160,11 +197,14 @@ return {
 			ensure_installed = {
 				-- LSP servers
 				"neocmakelsp",
+				"gitlab-ci-ls",
+				"yaml-language-server",
 				-- Formatters
 				-- "clang-format", -- Disabled: using system clang-format instead
 				-- "google-java-format", -- Commented out until needed
 				-- "latexindent", -- Commented out until needed
 				-- Linters
+				"yamllint",
 				-- "ruff", -- Commented out until needed
 			},
 		})
@@ -180,6 +220,13 @@ return {
 				}),
 				none_ls.builtins.formatting.black,
 				-- LINTERS
+				none_ls.builtins.diagnostics.yamllint.with({
+					filetypes = { "yaml", "yaml.gitlab" },
+					-- relaxed preset with new-lines disabled: this is a Windows repo (CRLF),
+					-- and yamllint's LF-only check isn't relevant here
+					extra_args = { "-d", "{extends: relaxed, rules: {new-lines: disable}}" },
+					prepend_extra_args = true,
+				}),
 				-- none_ls.builtins.diagnostics.ruff, -- Commented out until installed
 			},
 		})

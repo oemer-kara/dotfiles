@@ -1,5 +1,8 @@
 return {
 	-- Theme collection
+	-- Provides kanagawa-wave/dragon/lotus, referenced by the Themery list
+	-- below but never actually declared as a dependency until now.
+	{ "rebelot/kanagawa.nvim", lazy = true },
 	{ "slugbyte/lackluster.nvim", lazy = true },
 	{ "catppuccin/nvim", name = "catppuccin", lazy = true },
 	{ "folke/tokyonight.nvim", lazy = true },
@@ -182,7 +185,25 @@ return {
 					end
 				end,
 			})
-			require("themery").setup(opts)
+
+			-- Themery always prints "themeConfigFile is deprecated" on
+			-- Windows: its check requires the (unset) option to
+			-- fnamemodify(..., ":p") into a path containing "v:null", but on
+			-- Windows that adds a "v:\" drive prefix instead, so the
+			-- substring never survives and the print fires unconditionally.
+			-- There's no config-side fix; swallow just this one message.
+			local real_print = _G.print
+			_G.print = function(...)
+				local msg = table.concat(vim.tbl_map(tostring, { ... }), " ")
+				if not msg:find("themeConfigFile", 1, true) then
+					real_print(...)
+				end
+			end
+			local ok, err = pcall(require("themery").setup, opts)
+			_G.print = real_print
+			if not ok then
+				error(err)
+			end
 		end,
 		opts = {
 			themes = {

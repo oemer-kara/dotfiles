@@ -1,5 +1,8 @@
 return {
 	"ggandor/leap.nvim",
+	-- Upstream gutted the GitHub repo ("nuke it from orbit") and moved
+	-- development to Codeberg; the GitHub mirror no longer has source.
+	url = "https://codeberg.org/andyg/leap.nvim.git",
 	config = function()
         require('leap').opts.safe_labels = ''
 

@@ -1,6 +1,10 @@
 return {
 	{
 		"nvim-treesitter/nvim-treesitter",
+		-- "main" is the rewritten branch that dropped the .configs module this
+		-- config relies on (ensure_installed/highlight.enable/indent.enable/
+		-- incremental_selection/fold). "master" keeps the classic API.
+		branch = "master",
 		build = ":TSUpdate",
 		config = function()
 			require("nvim-treesitter.configs").setup({
@@ -35,7 +39,7 @@ return {
 			})
 		end,
 		dependencies = {
-			"nvim-treesitter/nvim-treesitter-textobjects",
+			{ "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
 		},
 		priority = 100,
 	},
