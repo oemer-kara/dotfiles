@@ -1,8 +1,8 @@
-# C:\ws\src\dotfiles\profile.ps1
+# C:\Users\Omer\ws\src\dotfiles\profile.ps1
 # Source of truth for the PowerShell profile. The real $PROFILE files just
 # dot-source this one so everything lives in the dotfiles repo.
 
-$scoopShims = 'C:\ws\scoop\shims'
+$scoopShims = 'D:\Scoop\shims'
 if (($env:Path -split ';') -notcontains $scoopShims) {
     $env:Path = "$scoopShims;$env:Path"
 }
@@ -18,18 +18,43 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 Set-PSReadLineOption -EditMode Vi
 Set-PSReadLineOption -ViModeIndicator Cursor
 
+# Tab cycles through path/argument completions (git branches, files, etc. -
+# posh-git registers the git-aware completions above; this is what triggers
+# them from the keyboard).
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
 Set-Alias -Name which -Value Get-Command
 Set-Alias -Name vim -Value nvim
 
-# Quick-jump directory shortcuts (mirrors the WezTerm Leader quick-jump keys)
-function ws { Set-Location 'C:\ws' }
-function tools { Set-Location 'C:\ws\tools' }
+# Land in the workspace root on every new shell.
+Set-Location 'C:\Users\Omer\ws'
+
+# Quick-jump directory shortcuts
+function ws { Set-Location 'C:\Users\Omer\ws' }
+function core { Set-Location 'C:\Users\Omer\ws\src\core' }
+function common { Set-Location 'C:\Users\Omer\ws\src\core\tools\common' }
+function tools { Set-Location 'C:\Users\Omer\ws\src\core\tools' }
+function dotfiles { Set-Location 'C:\Users\Omer\ws\src\dotfiles' }
 function desktop { Set-Location (Join-Path $HOME 'Desktop') }
 function downloads { Set-Location (Join-Path $HOME 'Downloads') }
 function documents { Set-Location (Join-Path $HOME 'Documents') }
-function nvimconfig { Set-Location 'C:\ws\src\dotfiles\nvim' }
+function nvimconfig { Set-Location 'C:\Users\Omer\ws\src\dotfiles\nvim' }
 function nvimdata { Set-Location (Join-Path $env:LOCALAPPDATA 'nvim-data') }
-function km { Set-Location 'C:\ws\src\karumono' }
+
+function lcore { Start-Process "https://gitlab.invisibleshare.com/seclous/core-2.0/core" }
+function lgit { Start-Process "https://gitlab.invisibleshare.com/seclous/" }
+function lpers { Start-Process "https://seclous.app.personio.com/" }
+function lharb { Start-Process "https://registry.invisibleshare.com/harbor/projects" }
+function larti { Start-Process "https://artifactory.invisibleshare.com/ui/packages" }
+function lport { Start-Process "https://portal.nvd/" }
+
+function conan_connect {
+    if (-not $env:CONAN_TOKEN) {
+        Write-Error "CONAN_TOKEN is not set."
+        return
+    }
+    conan remote login -p $env:CONAN_TOKEN conan oemer
+}
 
 # Runs a .bat/.cmd script in a child cmd.exe and imports any environment
 # variables it sets into the current PowerShell session. Needed for scripts
@@ -74,5 +99,5 @@ function cbuild {
     if (-not $env:VCToolsInstallDir) {
         vcvarsall
     }
-    & 'C:\ws\src\karumono\tools\cbuild.bat' @args
+    & 'C:\Users\Omer\ws\src\karumono\tools\cbuild.bat' @args
 }
