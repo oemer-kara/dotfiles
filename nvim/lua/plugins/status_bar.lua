@@ -5,7 +5,7 @@ return {
 		"nvim-tree/nvim-web-devicons", -- Ensure you have this for icons
 	},
 	enabled = true,
-	lazy = false,
+	event = "VeryLazy", -- draws right after the first frame instead of delaying it
 	config = function()
 		----------------------------------------
 		-- LUALINE SETUP

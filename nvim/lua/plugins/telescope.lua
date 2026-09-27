@@ -1,6 +1,15 @@
 return {
 	"nvim-telescope/telescope.nvim",
 	branch = "0.1.x",
+	cmd = "Telescope",
+	keys = {
+		{ "<C-t>", desc = "Find files" },
+		{ "<C-f>", desc = "Live grep" },
+		{ "<leader>fg", desc = "Live grep" },
+		{ "<leader>fb", desc = "Buffers" },
+		{ "<leader>fh", desc = "Help tags" },
+		{ "<leader>fr", desc = "Find references" },
+	},
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"nvim-telescope/telescope-ui-select.nvim",

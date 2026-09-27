@@ -35,7 +35,7 @@ lazy.setup({
 }, {
     -- Plugin update checking configuration
     checker = {
-        enabled = true, -- Enable automatic checking for plugin updates
+        enabled = false, -- Update manually with :Lazy update; the check spawns a git fetch per plugin
         notify = false, -- Disable notifications about updates
         frequency = 86400, -- Check once a day (in seconds)
     },

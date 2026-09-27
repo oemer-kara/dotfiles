@@ -1,5 +1,10 @@
 return {
 	"nvim-pack/nvim-spectre",
+	cmd = "Spectre",
+	keys = {
+		{ "<leader>S", desc = "Toggle Spectre" },
+		{ "<leader>sp", desc = "Search on current file" },
+	},
 
 	-----------------------------------
 	-- Dependencies

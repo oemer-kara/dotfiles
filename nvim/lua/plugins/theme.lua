@@ -171,11 +171,14 @@ return {
 	-- Theme switcher
 	{
 		"zaldih/themery.nvim",
-		lazy = false,
+		-- Themery itself only loads when the picker is opened. At startup the
+		-- theme it saved is applied straight from its state file, which skips
+		-- requiring the plugin and building its ~300-entry theme list.
+		cmd = "Themery",
 		keys = {
 			{ "<leader>tt", "<cmd>Themery<cr>", desc = "Theme switcher" },
 		},
-		config = function(_, opts)
+		init = function()
 			vim.api.nvim_create_autocmd("ColorSchemePre", {
 				group = vim.api.nvim_create_augroup("ThemerySwitchReset", { clear = true }),
 				callback = function()
@@ -185,6 +188,27 @@ return {
 					end
 				end,
 			})
+
+			local fd = io.open(vim.fn.stdpath("data") .. "/themery/state.json", "r")
+			local ok, state = pcall(vim.json.decode, fd and fd:read("*a") or "")
+			if fd then
+				fd:close()
+			end
+			if not ok or type(state) ~= "table" or not state.colorscheme then
+				return
+			end
+			local function run(code)
+				if type(code) == "string" and code ~= "" then
+					pcall(load(code))
+				end
+			end
+			run(state.globalBeforeCode)
+			run(state.beforeCode)
+			pcall(vim.cmd.colorscheme, state.colorscheme)
+			run(state.afterCode)
+			run(state.globalAfterCode)
+		end,
+		config = function(_, opts)
 
 			-- Themery always prints "themeConfigFile is deprecated" on
 			-- Windows: its check requires the (unset) option to

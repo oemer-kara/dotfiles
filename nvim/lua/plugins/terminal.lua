@@ -144,6 +144,7 @@ return {
 
 		toggleterm.setup({
 			shell = shell,
+			autochdir = true, -- follow nvim's cwd when the terminal is (re)opened
 			direction = "float",
 			size = 80,
 			start_in_insert = true,

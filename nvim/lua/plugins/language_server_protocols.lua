@@ -1,6 +1,8 @@
 return {
 	"williamboman/mason.nvim",
 	version = "~1.8.0",
+	event = { "BufReadPre", "BufNewFile" },
+	cmd = { "Mason", "MasonInstall", "MasonUpdate", "MasonToolsInstall", "MasonToolsUpdate" },
 	dependencies = {
 		{ "williamboman/mason-lspconfig.nvim", version = "~1.20.0" },
 		{ "whoissethdaniel/mason-tool-installer.nvim", version = "~1.11.0" },
@@ -18,7 +20,12 @@ return {
 		local mason_tool_installer = require("mason-tool-installer")
 		local none_ls = require("null-ls")
 		local capabilities = require("cmp_nvim_lsp").default_capabilities()
-		local telescope = require("telescope.builtin")
+		-- Resolve telescope on use so opening a file does not pull it in
+		local telescope = setmetatable({}, {
+			__index = function(_, picker)
+				return function(...) return require("telescope.builtin")[picker](...) end
+			end,
+		})
 		local lspkind = require("lspkind")
 
 		-- Add position encoding support for LSP
@@ -196,6 +203,7 @@ return {
 		mason_tool_installer.setup({
 			ensure_installed = {
 				-- LSP servers
+				"pyright",
 				"neocmakelsp",
 				"gitlab-ci-ls",
 				"yaml-language-server",
